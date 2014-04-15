@@ -1,21 +1,19 @@
 package xreal.CustomCamera02;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.AudioEncoder;
 import android.media.MediaRecorder.VideoEncoder;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -25,7 +23,6 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import xreal.CustomCamera02.R;
-import xreal.CustomCamera02.R.*;
 
 public class Recorder extends Activity implements SurfaceHolder.Callback,
 		MediaRecorder.OnInfoListener {
@@ -35,7 +32,20 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 	private boolean prRecordInProcess;
 	private SurfaceHolder prSurfaceHolder;
 	private Camera prCamera;
-	private final String cVideoFilePath = "/sdcard/TestVideo/";
+	//videoName
+//	private final String cVideoFilePath = "/sdcard/TestVideo/";
+	
+	// *************Nomenclatura y ubicacion del video
+		String path_Video = "/sdcard/TestVideo/";
+		File path_registro = new File(path_Video);
+		String vformat = ".mp4";
+
+		Calendar c = Calendar.getInstance();
+		SimpleDateFormat df = new SimpleDateFormat("yyyy.MM.dd_HH.mm.ss");
+		final String formattedDate = df.format(c.getTime());
+		String video_name = formattedDate;
+		File video_file = new File(path_Video + video_name + vformat);
+	
 
 	private Context prContext;
 
@@ -46,7 +56,7 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 		prContext = this.getApplicationContext();
 		setContentView(R.layout.activity_video);
 		// Utils.
-		createDirIfNotExist(cVideoFilePath);
+		createDirIfNotExist(path_Video);
 		prSurfaceView = (SurfaceView) findViewById(R.id.surface_camera);
 		prStartBtn = (Button) findViewById(R.id.main_btn1);
 		// prSettingsBtn = (Button) findViewById(R.id.main_btn2);
@@ -112,7 +122,7 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 	private final int cMaxRecordDurationInMs = 5000;
 	private final long cMaxFileSizeInBytes = 5000000;
 	private final int cFrameRate = 30;
-	private File prRecordedFile;
+//	private File prRecordedFile;
 
 	private boolean startRecording() {
 		prCamera.stopPreview();
@@ -122,20 +132,16 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 			prMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 			prMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
-			String lVideoFileFullPath;
+			//String lVideoFileFullPath;
 			String lDisplayMsg = "Current container format: ";
 			lDisplayMsg += "MP4\n";
-			lVideoFileFullPath = ".mp4";
+//			String vformat = ".mp4";
 			prMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 			prMediaRecorder.setAudioEncoder(AudioEncoder.AAC);
 			lDisplayMsg += "Current encoding format: ";
 			lDisplayMsg += "H264\n";
 			prMediaRecorder.setVideoEncoder(VideoEncoder.H264);
-			lVideoFileFullPath = cVideoFilePath
-					+ String.valueOf(System.currentTimeMillis())
-					+ lVideoFileFullPath;
-			prRecordedFile = new File(lVideoFileFullPath);
-			prMediaRecorder.setOutputFile(prRecordedFile.getPath());
+			prMediaRecorder.setOutputFile(video_file.getPath());
 			prMediaRecorder.setVideoSize(720, 480);
 			Toast.makeText(prContext, lDisplayMsg, Toast.LENGTH_LONG).show();
 			prMediaRecorder.setVideoFrameRate(cFrameRate);
@@ -167,7 +173,7 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 		finish();
 	}
 
-	private static final int REQUEST_DECODING_OPTIONS = 0;
+	//private static final int REQUEST_DECODING_OPTIONS = 0;
 
 	public static void createDirIfNotExist(String _path) {
 		File lf = new File(_path);
@@ -186,17 +192,14 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 		}
 	}
 
-	public static void getFrame(long useconds, int opt) {
+	public void getFrame(long useconds, int opt, String source) {
 		MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
 
-		mediaMetadataRetriever.setDataSource("sdcard/TestVideo/CAM00135.mp4");
-		Bitmap bmFrame3 = mediaMetadataRetriever.getFrameAtTime(useconds, opt); // option_closest
+		mediaMetadataRetriever.setDataSource(source);
+		Bitmap bmFrame3 = mediaMetadataRetriever.getFrameAtTime(useconds, opt); 
 
-		// metodo de almacenamiento - FUNCIONA, FALTA OBTENER EL FRAME
-		// ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		// bmFrame3.compress(Bitmap.CompressFormat.PNG, 40, bytes);
-		// File f = new File(path_Video + video_name + "-2.jpg");
-		File file = new File("sdcard/TestVideo/2.png");
+		//nombre y ubicacion del frame
+		File file = new File(path_Video + formattedDate + "." +useconds +".png");
 		if (file.exists())
 			file.delete();
 		try {
@@ -215,13 +218,10 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 		// TODO Auto-generated method stub
 		if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
 			prRecordInProcess = false;
-			
 			stopRecording();
-//			prMediaRecorder.release();
-//			prMediaRecorder = null;
-//			prCamera.release();
-//			prCamera = null;
-//			finish();
+			
+			getFrame(2000000,3,video_file.getPath());   //class media data retreiver option_closest 
+
 		}
 	}
 }
