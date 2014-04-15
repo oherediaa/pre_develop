@@ -27,9 +27,11 @@ import android.widget.Toast;
 import xreal.CustomCamera02.R;
 import xreal.CustomCamera02.R.*;
 
-public class Recorder extends Activity implements SurfaceHolder.Callback {
+public class Recorder extends Activity implements SurfaceHolder.Callback,
+		MediaRecorder.OnInfoListener {
 	private SurfaceView prSurfaceView;
 	private Button prStartBtn;
+	// private Button prSettingsBtn;
 	private boolean prRecordInProcess;
 	private SurfaceHolder prSurfaceHolder;
 	private Camera prCamera;
@@ -43,6 +45,7 @@ public class Recorder extends Activity implements SurfaceHolder.Callback {
 		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		prContext = this.getApplicationContext();
 		setContentView(R.layout.activity_video);
+		// Utils.
 		createDirIfNotExist(cVideoFilePath);
 		prSurfaceView = (SurfaceView) findViewById(R.id.surface_camera);
 		prStartBtn = (Button) findViewById(R.id.main_btn1);
@@ -65,10 +68,8 @@ public class Recorder extends Activity implements SurfaceHolder.Callback {
 		prMediaRecorder = new MediaRecorder();
 	}
 
-	// @Override
 	public void surfaceChanged(SurfaceHolder _holder, int _format, int _width,
 			int _height) {
-
 		try {
 			prCamera.setPreviewDisplay(_holder);
 			prCamera.startPreview();
@@ -108,6 +109,7 @@ public class Recorder extends Activity implements SurfaceHolder.Callback {
 	}
 
 	private MediaRecorder prMediaRecorder;
+	private final int cMaxRecordDurationInMs = 5000;
 	private final long cMaxFileSizeInBytes = 5000000;
 	private final int cFrameRate = 30;
 	private File prRecordedFile;
@@ -117,12 +119,9 @@ public class Recorder extends Activity implements SurfaceHolder.Callback {
 		try {
 			prCamera.unlock();
 			prMediaRecorder.setCamera(prCamera);
-			// set audio source as Microphone, video source as camera
-			// state: Initial=>Initialized
 			prMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 			prMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-			// set the file output format: 3gp or mp4
-			// state: Initialized=>DataSourceConfigured
+
 			String lVideoFileFullPath;
 			String lDisplayMsg = "Current container format: ";
 			lDisplayMsg += "MP4\n";
@@ -138,16 +137,14 @@ public class Recorder extends Activity implements SurfaceHolder.Callback {
 			prRecordedFile = new File(lVideoFileFullPath);
 			prMediaRecorder.setOutputFile(prRecordedFile.getPath());
 			prMediaRecorder.setVideoSize(720, 480);
-
 			Toast.makeText(prContext, lDisplayMsg, Toast.LENGTH_LONG).show();
 			prMediaRecorder.setVideoFrameRate(cFrameRate);
 			prMediaRecorder.setPreviewDisplay(prSurfaceHolder.getSurface());
+			prMediaRecorder.setMaxDuration(cMaxRecordDurationInMs);
 			prMediaRecorder.setMaxFileSize(cMaxFileSizeInBytes);
-			// prepare for capturing
-			// state: DataSourceConfigured => prepared
+			
+			prMediaRecorder.setOnInfoListener(this);
 			prMediaRecorder.prepare();
-			// start recording
-			// state: prepared => recording
 			prMediaRecorder.start();
 			prStartBtn.setText("Stop");
 			prRecordInProcess = true;
@@ -166,20 +163,18 @@ public class Recorder extends Activity implements SurfaceHolder.Callback {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		prStartBtn.setText("Start");
 		prRecordInProcess = false;
-		prCamera.startPreview();
-
+		finish();
 	}
+
+	private static final int REQUEST_DECODING_OPTIONS = 0;
 
 	public static void createDirIfNotExist(String _path) {
 		File lf = new File(_path);
 		try {
 			if (lf.exists()) {
-				// directory already exists
 			} else {
 				if (lf.mkdirs()) {
-					// Log.v(TAG, "createDirIfNotExist created " + _path);
 				} else {
 					// Log.v(TAG, "createDirIfNotExist failed to create " +
 					// _path);
@@ -188,6 +183,45 @@ public class Recorder extends Activity implements SurfaceHolder.Callback {
 		} catch (Exception e) {
 			// create directory failed
 			// Log.v(TAG, "createDirIfNotExist failed to create " + _path);
+		}
+	}
+
+	public static void getFrame(long useconds, int opt) {
+		MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+
+		mediaMetadataRetriever.setDataSource("sdcard/TestVideo/CAM00135.mp4");
+		Bitmap bmFrame3 = mediaMetadataRetriever.getFrameAtTime(useconds, opt); // option_closest
+
+		// metodo de almacenamiento - FUNCIONA, FALTA OBTENER EL FRAME
+		// ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		// bmFrame3.compress(Bitmap.CompressFormat.PNG, 40, bytes);
+		// File f = new File(path_Video + video_name + "-2.jpg");
+		File file = new File("sdcard/TestVideo/2.png");
+		if (file.exists())
+			file.delete();
+		try {
+			FileOutputStream out = new FileOutputStream(file);
+			bmFrame3.compress(Bitmap.CompressFormat.PNG, 100, out);
+			out.flush();
+			out.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onInfo(MediaRecorder mr, int what, int extra) {
+		// TODO Auto-generated method stub
+		if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
+			prRecordInProcess = false;
+			
+			stopRecording();
+//			prMediaRecorder.release();
+//			prMediaRecorder = null;
+//			prCamera.release();
+//			prCamera = null;
+//			finish();
 		}
 	}
 }
