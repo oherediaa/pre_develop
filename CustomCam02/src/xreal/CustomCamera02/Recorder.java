@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -14,6 +15,7 @@ import android.media.MediaMetadataRetriever;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.AudioEncoder;
 import android.media.MediaRecorder.VideoEncoder;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -55,7 +57,6 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		prContext = this.getApplicationContext();
 		setContentView(R.layout.activity_video);
-		// Utils.
 		createDirIfNotExist(path_Video);
 		prSurfaceView = (SurfaceView) findViewById(R.id.surface_camera);
 		prStartBtn = (Button) findViewById(R.id.main_btn1);
@@ -192,6 +193,7 @@ public class Recorder extends Activity implements SurfaceHolder.Callback,
 		}
 	}
 
+	@TargetApi(Build.VERSION_CODES.GINGERBREAD_MR1)
 	public void getFrame(long useconds, int opt, String source) {
 		MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
 

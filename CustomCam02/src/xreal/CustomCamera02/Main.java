@@ -1,6 +1,5 @@
 package xreal.CustomCamera02;
 
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -17,9 +16,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.os.Build;
 
-public class Main extends Activity 
-{
-	private Button recorderbtn;//button for recorder
+public class Main extends Activity {
+	private Button recorderbtn;// button for recorder
 	private float xAccel;
 	private float yAccel;
 	private float zAccel;
@@ -29,58 +27,57 @@ public class Main extends Activity
 
 	private boolean firstUpdate = true;
 	private final float shakeThreshold = 0.9f;
-	private boolean shakeInitiated = false;	
+	private boolean shakeInitiated = false;
 	private SensorManager mySensorManager;
-	boolean startedRecording=false;
-	
+	boolean startedRecording = false;
+
 	/** Called when the activity is first created. */
 	@Override
-	public void onCreate(Bundle savedInstanceState) 
-	{
+	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		recorderbtn = (Button)findViewById(R.id.recorder);
-		//start the VideoRecorder with accelerometer
-		mySensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE); 
-		mySensorManager.registerListener(mySensorEventListener, mySensorManager
-				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+		recorderbtn = (Button) findViewById(R.id.recorder);
+		// start the VideoRecorder with accelerometer
+		mySensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		mySensorManager.registerListener(mySensorEventListener,
+				mySensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
 				SensorManager.SENSOR_DELAY_NORMAL);
+		startedRecording = false;
 
-	    
-		//start the VideoRecorder on the click of the button 
-	   recorderbtn.setOnClickListener(new View.OnClickListener(){
-		  	public void onClick(View view){
-		  		startedRecording=true;
-		  		Intent intent = new Intent(Main.this, Recorder.class);
-		  		startActivity(intent);
-		  	  }
-	       });	
-}
-	
+		// start the VideoRecorder on the click of the button
+		recorderbtn.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View view) {
+				startedRecording = true;
+				Intent intent = new Intent(Main.this, Recorder.class);
+				startActivity(intent);
+			}
+		});
+	}
+
 	private final SensorEventListener mySensorEventListener = new SensorEventListener() {
 
-        public void onSensorChanged(SensorEvent se) {
-	    
-        	if(startedRecording==false){
-        	updateAccelParameters(se.values[0], se.values[1], se.values[2]);  
-        	if ((!shakeInitiated) && isAccelerationChanged()) {                                       
-        		shakeInitiated = true; 
-        	} else if ((shakeInitiated) && isAccelerationChanged()) {                              
-    	    executeShakeAction();
-        	} else if ((shakeInitiated) && (!isAccelerationChanged())) {                           
-        		shakeInitiated = false;
-        	}
-        	}
-        }
+		public void onSensorChanged(SensorEvent se) {
 
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-	    	       }
-    	};
+			if (startedRecording == false) {
+				updateAccelParameters(se.values[0], se.values[1], se.values[2]);
+				if ((!shakeInitiated) && isAccelerationChanged()) {
+					shakeInitiated = true;
+				} else if ((shakeInitiated) && isAccelerationChanged()) {
+					executeShakeAction();
+				} else if ((shakeInitiated) && (!isAccelerationChanged())) {
+					shakeInitiated = false;
+				}
+			}
+		}
 
-    private void updateAccelParameters(float xNewAccel, float yNewAccel,
+		public void onAccuracyChanged(Sensor sensor, int accuracy) {
+		}
+	};
+
+	private void updateAccelParameters(float xNewAccel, float yNewAccel,
 			float zNewAccel) {
-        
-		if (firstUpdate) {  
+
+		if (firstUpdate) {
 			xPreviousAccel = xNewAccel;
 			yPreviousAccel = yNewAccel;
 			zPreviousAccel = zNewAccel;
@@ -94,20 +91,21 @@ public class Main extends Activity
 		yAccel = yNewAccel;
 		zAccel = zNewAccel;
 	}
-    private boolean isAccelerationChanged() {
+
+	private boolean isAccelerationChanged() {
 		float deltaX = Math.abs(xPreviousAccel - xAccel);
 		float deltaY = Math.abs(yPreviousAccel - yAccel);
 		float deltaZ = Math.abs(zPreviousAccel - zAccel);
 		return (deltaX > shakeThreshold && deltaY > shakeThreshold)
 				|| (deltaX > shakeThreshold && deltaZ > shakeThreshold)
 				|| (deltaY > shakeThreshold && deltaZ > shakeThreshold);
-		
 	}
-    private void executeShakeAction() {
-    	if(startedRecording==false){
-    	startedRecording=true;
-    	Intent intent = new Intent(Main.this, Recorder.class);
-  	    startActivity(intent);
-    	}
+
+	private void executeShakeAction() {
+		if (startedRecording == false) {
+			startedRecording = true;
+			Intent intent = new Intent(Main.this, Recorder.class);
+			startActivity(intent);
+		}
 	}
 }
