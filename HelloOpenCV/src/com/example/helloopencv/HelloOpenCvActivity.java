@@ -1,145 +1,113 @@
 package com.example.helloopencv;
 
+import java.io.File;
+import java.io.FileOutputStream;
+
 import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
+import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.os.Build;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 
-public class HelloOpenCvActivity extends ActionBarActivity implements CvCameraViewListener2 {
+public class HelloOpenCvActivity extends Activity {
 
-    protected static final String TAG = null;
+	protected static final String TAG = null;
+	Button ThresholdBtn;
 
 	@Override
-    protected void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState) {
 		Log.i(TAG, "called onCreate");
-        super.onCreate(savedInstanceState);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        setContentView(R.layout.helloopencvlayout);
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.HelloOpenCvView);
-        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-        mOpenCvCameraView.setCvCameraViewListener(this);
-
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
-                    .commit();
-        }
-    }
-
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.hello_open_cv, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
-
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_hello_open_cv, container, false);
-            return rootView;
-        }
-    }
-    
-    //------------------------------------------------------------------------------------------------
-    private CameraBridgeViewBase mOpenCvCameraView;
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                {
-                    
-					Log.i(TAG, "OpenCV loaded successfully");
-                    mOpenCvCameraView.enableView();
-                } break;
-                default:
-                {
-                    super.onManagerConnected(status);
-                } break;
-            }
-        }
-    };
-
-    @Override
-    public void onResume()
-    {
-        super.onResume();
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, this, mLoaderCallback);
-    }
-    
-    @Override
-    public void onPause()
-    {
-        super.onPause();
-        if (mOpenCvCameraView != null)
-            mOpenCvCameraView.disableView();
-    }
-
-    public void onDestroy() {
-        super.onDestroy();
-        if (mOpenCvCameraView != null)
-            mOpenCvCameraView.disableView();
-    }
-
-
-	@Override
-	public void onCameraViewStarted(int width, int height) {
-		// TODO Auto-generated method stub
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.helloopencvlayout);
 		
+		ThresholdBtn = (Button) findViewById(R.id.button1);
+		ThresholdBtn.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View view) {
+				thresholdFrame("/sdcard/TestVideo/2014.05.27_13.27.24.3200000.png");
+			}
+		});
 	}
 
+	// ---AsyncInitialization------------------------------------------------------------------------------------------
+	// private CameraBridgeViewBase mOpenCvCameraView;
+	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+		@Override
+		public void onManagerConnected(int status) {
+			switch (status) {
+			case LoaderCallbackInterface.SUCCESS: {
+
+				Log.i(TAG, "OpenCV loaded successfully");
+				// mOpenCvCameraView.enableView();
+			}
+				break;
+			default: {
+				super.onManagerConnected(status);
+			}
+				break;
+			}
+		}
+	};
 
 	@Override
-	public void onCameraViewStopped() {
-		// TODO Auto-generated method stub
-		
+	public void onResume() {
+		super.onResume();
+		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, this,
+				mLoaderCallback);
 	}
-
 
 	@Override
-	public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-		// TODO Auto-generated method stub
-		return inputFrame.rgba();
+	public void onPause() {
+		super.onPause();
+
 	}
 
+	public void onDestroy() {
+		super.onDestroy();
+	}
+	// ---------------------------------------------------------------------------------------------
+	public void thresholdFrame(String imagePath) {
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE,
+				new Size(19, 19));
+		Mat closed = new Mat(); // closed will have type CV_32F
+		Bitmap inputFrame = BitmapFactory.decodeFile(imagePath);
+		// --
+		Mat image = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
+				CvType.CV_8UC1);
+		Utils.bitmapToMat(inputFrame, image);
+		// --
+//		Imgproc.morphologyEx(image, closed, Imgproc.MORPH_CLOSE, kernel);
+//		Core.divide(image, closed, closed, 1, CvType.CV_32F);
+//		Core.normalize(closed, image, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+//		Imgproc.threshold(image, image, -1, 255, Imgproc.THRESH_BINARY_INV
+//				+ Imgproc.THRESH_OTSU);
+		Imgproc.threshold(image, image, -1, 255, Imgproc.THRESH_BINARY_INV);
+		// --
+		Utils.matToBitmap(image, inputFrame);
+		File file = new File("/sdcard/TestVideo/1firstOpencv.png");
+		if (file.exists())
+			file.delete();
+		try {
+			FileOutputStream out = new FileOutputStream(file);
+			inputFrame.compress(Bitmap.CompressFormat.PNG, 100, out);
+			out.flush();
+			out.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }
