@@ -38,7 +38,7 @@ public class HelloOpenCvActivity extends Activity {
 
 			@Override
 			public void onClick(View view) {
-				thresholdFrame("/sdcard/TestVideo/2014.05.27_13.27.24.3200000.png");
+				thresholdFrame("/sdcard/TestVideo/33.jpg");
 			}
 		});
 	}
@@ -89,13 +89,17 @@ public class HelloOpenCvActivity extends Activity {
 		Mat image = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
 				CvType.CV_8UC1);
 		Utils.bitmapToMat(inputFrame, image);
+		Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2GRAY);
 		// --
 //		Imgproc.morphologyEx(image, closed, Imgproc.MORPH_CLOSE, kernel);
 //		Core.divide(image, closed, closed, 1, CvType.CV_32F);
 //		Core.normalize(closed, image, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
 //		Imgproc.threshold(image, image, -1, 255, Imgproc.THRESH_BINARY_INV
 //				+ Imgproc.THRESH_OTSU);
-		Imgproc.threshold(image, image, -1, 255, Imgproc.THRESH_BINARY_INV);
+		Imgproc.threshold(image, image, 100, 255, Imgproc.THRESH_BINARY_INV);
+		Imgproc.Sobel(image, image, CvType.CV_8UC1, 1, 1);
+		Core.convertScaleAbs(image, image, 10, 0);
+		
 		// --
 		Utils.matToBitmap(image, inputFrame);
 		File file = new File("/sdcard/TestVideo/1firstOpencv.png");
