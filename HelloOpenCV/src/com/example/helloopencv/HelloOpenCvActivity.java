@@ -26,6 +26,7 @@ public class HelloOpenCvActivity extends Activity {
 
 	protected static final String TAG = null;
 	Button ThresholdBtn;
+	Bitmap inputFrame;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -81,28 +82,52 @@ public class HelloOpenCvActivity extends Activity {
 	}
 	// ---------------------------------------------------------------------------------------------
 	public void thresholdFrame(String imagePath) {
-		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE,
-				new Size(19, 19));
+//		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE,
+//				new Size(19, 19));
 		Mat closed = new Mat(); // closed will have type CV_32F
-		Bitmap inputFrame = BitmapFactory.decodeFile(imagePath);
+		inputFrame = BitmapFactory.decodeFile(imagePath);
 		// --
 		Mat image = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
+				CvType.CV_8UC1);
+		Mat Ximage = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
+				CvType.CV_8UC1);
+		Mat Yimage = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
 				CvType.CV_8UC1);
 		Utils.bitmapToMat(inputFrame, image);
 		Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2GRAY);
 		// --
-//		Imgproc.morphologyEx(image, closed, Imgproc.MORPH_CLOSE, kernel);
-//		Core.divide(image, closed, closed, 1, CvType.CV_32F);
-//		Core.normalize(closed, image, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
-//		Imgproc.threshold(image, image, -1, 255, Imgproc.THRESH_BINARY_INV
-//				+ Imgproc.THRESH_OTSU);
-		Imgproc.threshold(image, image, 100, 255, Imgproc.THRESH_BINARY_INV);
-		Imgproc.Sobel(image, image, CvType.CV_8UC1, 1, 1);
-		Core.convertScaleAbs(image, image, 10, 0);
+////		Imgproc.morphologyEx(image, closed, Imgproc.MORPH_CLOSE, kernel);
+////		Core.divide(image, closed, closed, 1, CvType.CV_32F);
+////		Core.normalize(closed, image, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+////		Imgproc.threshold(image, image, -1, 255, Imgproc.THRESH_BINARY_INV
+////				+ Imgproc.THRESH_OTSU);
+//		Imgproc.threshold(image, image, 100, 255, Imgproc.THRESH_BINARY_INV);
+////		Imgproc.Sobel(image, image, CvType.CV_8UC1, 1, 1);
+//		Core.convertScaleAbs(image, image, 10, 0);
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(5,5));
+		Mat temp = new Mat(); 
+
+		Imgproc.resize(image, temp, new Size(image.cols()/4, image.rows()/4));
+		Imgproc.morphologyEx(temp, temp, Imgproc.MORPH_CLOSE, kernel);
+		Imgproc.resize(temp, temp, new Size(image.cols(), image.rows()));
+
+		Core.divide(image, temp, temp, 1, CvType.CV_32F); // temp will now have type CV_32F
+		Core.normalize(temp, image, 0, 255, Core.NORM_MINMAX, CvType.CV_8U);
+
+		Imgproc.threshold(image, image, -1, 255, 
+		    Imgproc.THRESH_BINARY_INV+Imgproc.THRESH_OTSU);
+		Imgproc.Canny(image, image, 66, 90);
+		//-- sumar X e Y
+//		Imgproc.Sobel(image, Yimage, CvType.CV_8UC1, 1, 0);
+//		Imgproc.Sobel(image, Ximage, CvType.CV_8UC1, 0, 1);
+//		Core.addWeighted(Yimage, 1, Ximage, 1, 0, image, -1);
 		
+		saveMat(image, "1firstOpencv");
+	}
 		// --
-		Utils.matToBitmap(image, inputFrame);
-		File file = new File("/sdcard/TestVideo/1firstOpencv.png");
+		void saveMat(Mat imagetosave, String namepng){
+		Utils.matToBitmap(imagetosave, inputFrame);
+		File file = new File("/sdcard/TestVideo/" + namepng + ".png");
 		if (file.exists())
 			file.delete();
 		try {
