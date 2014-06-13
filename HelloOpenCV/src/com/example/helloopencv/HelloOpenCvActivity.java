@@ -131,7 +131,7 @@ public class HelloOpenCvActivity extends Activity {
 		//
 		// Imgproc.threshold(image, image, -1,
 		// 255,Imgproc.THRESH_BINARY_INV+Imgproc.THRESH_OTSU);
-		Imgproc.Canny(image, image, 66, 90); // canny funcional
+//		Imgproc.Canny(image, image, 66, 90); // canny funcional
 
 		// -- sumar X e Y
 		// Imgproc.Sobel(image, Yimage, CvType.CV_8UC1, 1, 0);
@@ -144,20 +144,21 @@ public class HelloOpenCvActivity extends Activity {
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 		List<RotatedRect> out_rects = new ArrayList<RotatedRect>();
 		Imgproc.findContours(image, contours, mHierarchy,
-				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
 		Imgproc.drawContours(image, contours, -1, contour_color);
 
-		Iterator<MatOfPoint> itr = contours.iterator();
-
-		while (itr.hasNext()) {
-			MatOfPoint tmp = itr.next();
-			MatOfPoint2f tmp2f = new MatOfPoint2f(tmp.toArray());
-			RotatedRect rr = Imgproc.minAreaRect(tmp2f);
-			// List<Point> listOfPoints = tmp.toList();
-			if (VerifySize(rr)) {
-				out_rects.add(rr);
-			}
-		}
+		//iteracion de minAreaRect
+//		Iterator<MatOfPoint> itr = contours.iterator();
+//
+//		while (itr.hasNext()) {
+//			MatOfPoint tmp = itr.next();
+//			MatOfPoint2f tmp2f = new MatOfPoint2f(tmp.toArray());
+//			RotatedRect rr = Imgproc.minAreaRect(tmp2f);
+//			// List<Point> listOfPoints = tmp.toList();
+//			if (VerifySize(rr)) {
+//				out_rects.add(rr);
+//			}
+//		}
 
 		saveMat(image, "contours");
 	}
@@ -171,10 +172,10 @@ public class HelloOpenCvActivity extends Activity {
 
 		float min_rate = aspect - aspect * error;
 		float max_rate = aspect + aspect * error;
-		int area = rr.size.width * rr.size.height;
+		double area = rr.size.width * rr.size.height;
 		float rate = (float) rr.size.width / (float) rr.size.height;
 		if (rate < 1)
-			rate = 1.0 / rate;
+			rate = 1.0f / rate;
 		if (area > max_area || area < min_area || rate < min_rate
 				|| rate > max_rate)
 			return false;
