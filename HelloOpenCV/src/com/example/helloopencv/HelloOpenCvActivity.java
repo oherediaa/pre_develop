@@ -29,18 +29,22 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class HelloOpenCvActivity extends Activity {
 
 	protected static final String TAG = null;
 	Button ThresholdBtn;
 	Bitmap inputFrame;
+	TextView display;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.i(TAG, "called onCreate");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.helloopencvlayout);
+		
+		display = (TextView) findViewById(R.id.textView1);
 
 		ThresholdBtn = (Button) findViewById(R.id.button1);
 		ThresholdBtn.setOnClickListener(new OnClickListener() {
@@ -90,26 +94,41 @@ public class HelloOpenCvActivity extends Activity {
 	}
 
 	// ---------------------------------------------------------------------------------------------
-	public void detect_plates(String imagePath) {        //checkout local branch and merge remote branch
+	public void detect_plates(String imagePath) { // checkout local branch and
+													// merge remote branch
 		inputFrame = BitmapFactory.decodeFile(imagePath);
 		Mat image = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
 				CvType.CV_8UC1);
 		Utils.bitmapToMat(inputFrame, image);
-		//--Preprocessing-----------------------------------------------------------------------
+		// --Preprocessing-----------------------------------------------------------------------
 		Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2GRAY);
 		Imgproc.threshold(image, image, 100, 255, Imgproc.THRESH_BINARY_INV);
 		Core.convertScaleAbs(image, image, 10, 0);
-		
+
 		Imgproc.Canny(image, image, 66, 90); // canny funcional
-		//hasta aqui se obtiene los bordes delineados , debajo inicia la identificacion de rectangulo
+		// hasta aqui se obtiene los bordes delineados , debajo inicia la
+		// identificacion de rectangulo y se pierde los bordes internos de los
+		// caracteres
 		Scalar contour_color = new Scalar(255, 255, 0, 255);
 		Mat mHierarchy = new Mat();
-		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();		
+		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 		List<RotatedRect> out_rects = new ArrayList<RotatedRect>();
 		Imgproc.findContours(image, contours, mHierarchy,
 				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
 		Imgproc.drawContours(image, contours, -1, contour_color);
-		//--
+		double area_max=0;
+		Iterator<MatOfPoint> itr = contours.iterator();
+		while(itr.hasNext()){
+			MatOfPoint2f tmp2f = new MatOfPoint2f(itr.next().toArray());
+			RotatedRect rect1=Imgproc.minAreaRect(tmp2f);
+			double area1=rect1.size.width * rect1.size.height;
+			
+			if(area1>area_max){
+				area_max=area1;
+			}
+		}
+		
+		// --
 		saveMat(image, "1test");
 	}
 
