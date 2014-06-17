@@ -90,7 +90,7 @@ public class HelloOpenCvActivity extends Activity {
 	}
 
 	// ---------------------------------------------------------------------------------------------
-	public void detect_plates(String imagePath) {
+	public void detect_plates(String imagePath) {        //checkout local branch and merge remote branch
 		inputFrame = BitmapFactory.decodeFile(imagePath);
 		Mat image = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
 				CvType.CV_8UC1);
@@ -99,6 +99,9 @@ public class HelloOpenCvActivity extends Activity {
 		Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2GRAY);
 		Imgproc.threshold(image, image, 100, 255, Imgproc.THRESH_BINARY_INV);
 		Core.convertScaleAbs(image, image, 10, 0);
+		
+		Imgproc.Canny(image, image, 66, 90); // canny funcional
+		//hasta aqui se obtiene los bordes delineados , debajo inicia la identificacion de rectangulo
 		Scalar contour_color = new Scalar(255, 255, 0, 255);
 		Mat mHierarchy = new Mat();
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();		
@@ -107,7 +110,7 @@ public class HelloOpenCvActivity extends Activity {
 				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
 		Imgproc.drawContours(image, contours, -1, contour_color);
 		//--
-		saveMat(image, "contours");
+		saveMat(image, "1test");
 	}
 
 	boolean VerifySize(RotatedRect rr) {
