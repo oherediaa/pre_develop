@@ -2,6 +2,9 @@ package com.example.helloopencv;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,7 +24,10 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import com.googlecode.tesseract.android.TessBaseAPI;
+
 import android.app.Activity;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -29,19 +35,51 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class HelloOpenCvActivity extends Activity {
 
 	protected static final String TAG = null;
 	Button ThresholdBtn;
 	Bitmap inputFrame;
+	TextView display;
+	String DATA_PATH= "/sdcard/Tesseract/";
+	String lang= "eng";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.i(TAG, "called onCreate");
+		
+		if (!(new File(DATA_PATH + "tessdata/" + lang + ".traineddata")).exists()) {
+			try {
+
+				AssetManager assetManager = getAssets();
+				InputStream in = assetManager.open("tessdata/" + lang + ".traineddata");
+				//GZIPInputStream gin = new GZIPInputStream(in);
+				OutputStream out = new FileOutputStream(DATA_PATH
+						+ "tessdata/" + lang + ".traineddata");
+
+				// Transfer bytes from in to out
+				byte[] buf = new byte[1024];
+				int len;
+				//while ((lenf = gin.read(buff)) > 0) {
+				while ((len = in.read(buf)) > 0) {
+					out.write(buf, 0, len);
+				}
+				in.close();
+				//gin.close();
+				out.close();
+				
+				Log.v(TAG, "Copied " + lang + " traineddata");
+			} catch (IOException e) {
+				Log.e(TAG, "Was unable to copy " + lang + " traineddata " + e.toString());
+			}
+		}
+		
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.helloopencvlayout);
-
+		
+		display = (TextView) findViewById(R.id.display);
 		ThresholdBtn = (Button) findViewById(R.id.button1);
 		ThresholdBtn.setOnClickListener(new OnClickListener() {
 
@@ -111,6 +149,17 @@ public class HelloOpenCvActivity extends Activity {
 		Imgproc.drawContours(image, contours, -1, contour_color);
 		//--
 		saveMat(image, "1test");
+		
+		TessBaseAPI baseApi = new TessBaseAPI();
+		// DATA_PATH = Path to the storage
+		// lang = for which the language data exists, usually "eng"
+		baseApi.init(DATA_PATH, lang);
+		// Eg. baseApi.init("/mnt/sdcard/tesseract/tessdata/eng.traineddata", "eng");
+		Bitmap inputTess = BitmapFactory.decodeFile("/sdcard/TestVideo/APEthreshold.png");
+		baseApi.setImage(inputTess);
+		String recognizedText = baseApi.getUTF8Text();
+		baseApi.end();
+		display.setText(recognizedText);
 	}
 
 	boolean VerifySize(RotatedRect rr) {
