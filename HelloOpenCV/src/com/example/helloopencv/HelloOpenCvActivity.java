@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -22,6 +23,7 @@ import org.opencv.core.Point;
 import org.opencv.core.RotatedRect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.core.Core.MinMaxLocResult;
 import org.opencv.imgproc.Imgproc;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
@@ -132,30 +134,34 @@ public class HelloOpenCvActivity extends Activity {
 		inputFrame = BitmapFactory.decodeFile(imagePath);
 		Mat image = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
 				CvType.CV_8UC1);
+		Mat image_canny = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
+				CvType.CV_8UC1);
 		Utils.bitmapToMat(inputFrame, image);
 		//--Preprocessing-----------------------------------------------------------------------
 		Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2GRAY);
 		Imgproc.threshold(image, image, 100, 255, Imgproc.THRESH_BINARY_INV);
 		Core.convertScaleAbs(image, image, 10, 0);
 		
-		Imgproc.Canny(image, image, 66, 90); // canny funcional
+//		Imgproc.Canny(image, image, 66, 90); // 
+		Imgproc.Canny(image, image_canny, 66, 90); // canny funcional
 		//hasta aqui se obtiene los bordes delineados , debajo inicia la identificacion de rectangulo
 		Scalar contour_color = new Scalar(255, 255, 0, 255);
 		Mat mHierarchy = new Mat();
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();		
 		List<RotatedRect> out_rects = new ArrayList<RotatedRect>();
-		Imgproc.findContours(image, contours, mHierarchy,
-				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
-		Imgproc.drawContours(image, contours, -1, contour_color);
+//		Imgproc.findContours(image, contours, mHierarchy,
+//				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
+//		Imgproc.drawContours(image, contours, -1, contour_color);
 		//--
 		saveMat(image, "1test");
+		saveMat(image_canny, "1test_canny");
 		
 		TessBaseAPI baseApi = new TessBaseAPI();
 		// DATA_PATH = Path to the storage
 		// lang = for which the language data exists, usually "eng"
 		baseApi.init(DATA_PATH, lang);
 		// Eg. baseApi.init("/mnt/sdcard/tesseract/tessdata/eng.traineddata", "eng");
-		Bitmap inputTess = BitmapFactory.decodeFile("/sdcard/TestVideo/APEthreshold.png");
+		Bitmap inputTess = BitmapFactory.decodeFile("/sdcard/TestVideo/threshold_clipped2.png");
 		baseApi.setImage(inputTess);
 		String recognizedText = baseApi.getUTF8Text();
 		baseApi.end();
@@ -195,5 +201,25 @@ public class HelloOpenCvActivity extends Activity {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	Mat band_clipping(Mat Matframe){
+//		Mat bandFrame= new Mat(inputFrame.getWidth(),1, CvType.CV_8UC1);
+//		Mat vertical_proj= Matframe.col(1);
+//		Mat bandFrame;
+//		Core.reduce(Matframe, vertical_proj, 1, Core.REDUCE_SUM);
+//		int max_val=0;
+//		for(int i=1;i==vertical_proj.rows();i++){
+//			if(vertical_proj.get(i, 1, )>max_val){	
+//			}	
+//		}		
+		
+		//Initialize the intArray with the same size as the number of pixels on the image  
+        int[] intArray = new int[inputFrame.getWidth()*inputFrame.getHeight()];  
+  
+        //copy pixel data from the Bitmap into the 'intArray' array  
+        bmp.getPixels(intArray, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
+		bandFrame=Matframe.submat(rowStart, rowEnd, 1, Matframe.cols());
+		return bandFrame;
 	}
 }
