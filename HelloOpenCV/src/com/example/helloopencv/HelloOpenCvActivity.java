@@ -132,6 +132,7 @@ public class HelloOpenCvActivity extends Activity {
 	// ---------------------------------------------------------------------------------------------
 	public void detect_plates(String imagePath) {        //checkout local branch and merge remote branch
 		inputFrame = BitmapFactory.decodeFile(imagePath);
+		Bitmap cannybmp = inputFrame;
 		Mat image = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
 				CvType.CV_8UC1);
 		Mat image_canny = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
@@ -140,20 +141,14 @@ public class HelloOpenCvActivity extends Activity {
 		//--Preprocessing-----------------------------------------------------------------------
 		Imgproc.cvtColor(image, image, Imgproc.COLOR_RGB2GRAY);
 		Imgproc.threshold(image, image, 100, 255, Imgproc.THRESH_BINARY_INV);
-		Core.convertScaleAbs(image, image, 10, 0);
-		
-//		Imgproc.Canny(image, image, 66, 90); // 
+		Core.convertScaleAbs(image, image, 10, 0); //este img es el usado para tesseract
 		Imgproc.Canny(image, image_canny, 66, 90); // canny funcional
 		//hasta aqui se obtiene los bordes delineados , debajo inicia la identificacion de rectangulo
-		Scalar contour_color = new Scalar(255, 255, 0, 255);
-		Mat mHierarchy = new Mat();
-		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();		
-		List<RotatedRect> out_rects = new ArrayList<RotatedRect>();
-//		Imgproc.findContours(image, contours, mHierarchy,
-//				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
-//		Imgproc.drawContours(image, contours, -1, contour_color);
-		//--
-		saveMat(image, "1test");
+		Utils.matToBitmap(image_canny, cannybmp);
+		
+		int val_max = band_clippping(cannybmp); // crea bandbmp
+		
+		//saveMat(image, "1test");
 		saveMat(image_canny, "1test_canny");
 		
 		TessBaseAPI baseApi = new TessBaseAPI();
@@ -165,7 +160,7 @@ public class HelloOpenCvActivity extends Activity {
 		baseApi.setImage(inputTess);
 		String recognizedText = baseApi.getUTF8Text();
 		baseApi.end();
-		display.setText(recognizedText);
+		display.setText(Integer.toString(val_max));
 	}
 
 	boolean VerifySize(RotatedRect rr) {
@@ -203,23 +198,95 @@ public class HelloOpenCvActivity extends Activity {
 		}
 	}
 	
-	Mat band_clipping(Mat Matframe){
-//		Mat bandFrame= new Mat(inputFrame.getWidth(),1, CvType.CV_8UC1);
-//		Mat vertical_proj= Matframe.col(1);
-//		Mat bandFrame;
-//		Core.reduce(Matframe, vertical_proj, 1, Core.REDUCE_SUM);
-//		int max_val=0;
-//		for(int i=1;i==vertical_proj.rows();i++){
-//			if(vertical_proj.get(i, 1, )>max_val){	
-//			}	
-//		}		
+	int band_clippping(Bitmap cannybmp){
+		int [][] cannyarray=getBinary(cannybmp); //creates int [][] imgBin
+		int lar = cannyarray.length;
+	    int alt = cannyarray[0].length;
+		Bitmap bandbmp;
+		int[][] band_array;
 		
-		//Initialize the intArray with the same size as the number of pixels on the image  
-        int[] intArray = new int[inputFrame.getWidth()*inputFrame.getHeight()];  
-  
-        //copy pixel data from the Bitmap into the 'intArray' array  
-        bmp.getPixels(intArray, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
-		bandFrame=Matframe.submat(rowStart, rowEnd, 1, Matframe.cols());
-		return bandFrame;
+		int[] vproj = fProjectionH(cannyarray);
+		int vproj_max=0;
+		//hallar maximo
+		for(int i = 0; i < alt; i++)
+        {
+            if(vproj[i] > vproj_max){vproj_max=vproj[i];}
+        }
+		//limite superior
+		int lim_sup=0,lim_inf=alt;
+		for(int i = 0; i < alt; i++)
+        {
+            if(vproj[i] == vproj_max){lim_sup = i; i =alt;}
+        }
+		//limite inferior
+		for(int i = 0; i < alt; i++)
+        {
+            if(vproj[alt-i-1] >= vproj_max*0.75){lim_inf = alt-i-1; i=alt;}
+        }
+        
+        //cambiar:
+//        bandbmp = Bitmap.createBitmap(band_array, cannybmp.getWidth(), cannybmp.getHeight(), Bitmap.Config.ARGB_8888);
+		return cannybmp.getPixel(0, 10);
+	}
+	
+	public static int[] fProjectionH(int img[][])
+	{
+	    int lar = img.length;
+	    int alt = img[0].length;
+	 
+	    int vproj[] = new int[alt];
+	    for(int j = 0; j < alt; j++)
+	    {
+	        for(int i = 0; i < lar; i++)
+	        {
+	            if(img[i][j] == 1){vproj[j] += 1;}
+	        }
+	    }
+	    return vproj;
+	}
+	
+	private int[][] getBinary(Bitmap bmp)
+	{
+	    int w = bmp.getWidth();
+	    int h = bmp.getHeight();
+	    int rgb = 0;
+	    int[][] imgBin = new int[w][h];
+	 
+	    for(int i = 0; i < w; i++)
+	    {
+	        for(int j = 0; j < h; j++)
+	        {
+	            rgb = bmp.getPixel(i, j);
+	            imgBin[i][j] = rgb != 0 ? 1 : 0;
+	        }
+	    }
+	    return imgBin;
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
