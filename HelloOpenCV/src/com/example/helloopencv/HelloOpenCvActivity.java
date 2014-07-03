@@ -144,12 +144,13 @@ public class HelloOpenCvActivity extends Activity {
 		Core.convertScaleAbs(image, image, 10, 0); //este img es el usado para tesseract
 		Imgproc.Canny(image, image_canny, 66, 90); // canny funcional
 		//hasta aqui se obtiene los bordes delineados , debajo inicia la identificacion de rectangulo
+//		Imgproc.threshold(image_canny, image_canny, 100, 255, Imgproc.THRESH_BINARY);
 		Utils.matToBitmap(image_canny, cannybmp);
 		
-		int val_max = band_clippping(cannybmp); // crea bandbmp
+		int val_max = band_clipping2(image_canny); // crea bandbmp
 		
 		//saveMat(image, "1test");
-		saveMat(image_canny, "1test_canny");
+		saveMat(image_canny, "1test");
 		
 		TessBaseAPI baseApi = new TessBaseAPI();
 		// DATA_PATH = Path to the storage
@@ -160,7 +161,7 @@ public class HelloOpenCvActivity extends Activity {
 		baseApi.setImage(inputTess);
 		String recognizedText = baseApi.getUTF8Text();
 		baseApi.end();
-		display.setText(Integer.toString(val_max));
+		display.setText(Integer.toString(cannybmp.getPixel(100,120)));
 	}
 
 	boolean VerifySize(RotatedRect rr) {
@@ -198,7 +199,25 @@ public class HelloOpenCvActivity extends Activity {
 		}
 	}
 	
-	int band_clippping(Bitmap cannybmp){
+	int band_clipping2(Mat image_canny){
+		int max_val=0;
+		Mat vert_proj=new Mat(inputFrame.getWidth(), 1,CvType.CV_8UC1);
+		Mat maxx=new Mat(1, 1,CvType.CV_8UC1);
+		
+		Core.reduce(image_canny, vert_proj, 0, Core.REDUCE_SUM, CvType.CV_8UC1);
+		Core.reduce(image_canny, maxx, 0, Core.REDUCE_MAX, CvType.CV_8UC1);
+		
+		for (int i = 0; i< 25; i++) {
+		    double[] histValues = vert_proj.get(i, 0);
+		    for (int j = 0; j < histValues.length; j++) {
+		        Log.d(TAG, "yourData=" + histValues[j]);
+		    }
+		}
+		return max_val;
+	}
+	
+	//--
+	int band_clipping(Bitmap cannybmp){
 		int [][] cannyarray=getBinary(cannybmp); //creates int [][] imgBin
 		int lar = cannyarray.length;
 	    int alt = cannyarray[0].length;
@@ -226,7 +245,7 @@ public class HelloOpenCvActivity extends Activity {
         
         //cambiar:
 //        bandbmp = Bitmap.createBitmap(band_array, cannybmp.getWidth(), cannybmp.getHeight(), Bitmap.Config.ARGB_8888);
-		return cannybmp.getPixel(0, 10);
+		return cannybmp.getPixel(100,100);
 	}
 	
 	public static int[] fProjectionH(int img[][])
