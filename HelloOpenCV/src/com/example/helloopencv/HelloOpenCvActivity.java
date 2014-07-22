@@ -50,7 +50,7 @@ public class HelloOpenCvActivity extends Activity {
 	ImageView imageView1;
 	String DATA_PATH = "/sdcard/Tesseract/";
 	String lang = "eng";
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.i(TAG, "called onCreate");
@@ -94,24 +94,31 @@ public class HelloOpenCvActivity extends Activity {
 		ThresholdBtn.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				MAINFUNCTION("/sdcard/TestVideo/33.jpg");
+				MAINFUNCTION("/sdcard/TestVideo/33.jpg");// 33.jpg
 			}
 		});
 	}
-	
+
 	public void MAINFUNCTION(String imagePath) {
-		Mat workHere = threshold1(imagePath);
-		workHere = cannyMat(workHere);
-		workHere = dilateMat(workHere);
-//		List<MatOfPoint> cuadcontour = detectar_cuadrilateros1(workHere);
-//		workHere = drawCont(workHere, cuadcontour);
-		showonImageView(workHere);
-		saveMatBMP(workHere, "1testpofa");// Mat , String //
-		//FINAL STEP---------------------------
-		// String recognizedText =Tesseract_function("/sdcard/TestVideo/threshold_clipped2.png");
+		Mat outputMat = toGrayMat(imagePath);
+		// outputMat = thresholdMat(outputMat);
+		Mat threshMat = thresholdMat(outputMat);
+		outputMat = cannyMat(threshMat);
+		dilateMat(outputMat, 5.0f);
+		// dibujar contorno encontrado de cuadrilatero
+		List<MatOfPoint> cuadcontour = detectar_cuadrilateros1(outputMat);
+		outputMat = drawCont2(outputMat, cuadcontour);
+		// salidas
+		Mat clipp = clipping2(threshMat, outputMat);
+		showonImageView(clipp);
+		saveMat(clipp, "1placa");
+		// FINAL STEP-------------Tesseract
+		String recognizedText = Tesseract_function("/sdcard/TestVideo/1placa.png");// threshold_clipped2.png
+		display.setText(recognizedText);
 	}
-	
-	public Mat toGrayMat(String imagePath) {        //checkout local branch and merge remote branch
+
+	public Mat toGrayMat(String imagePath) { // checkout local branch and merge
+												// remote branch
 		inputFrame = BitmapFactory.decodeFile(imagePath);
 		Mat imageMat = new Mat(inputFrame.getWidth(), inputFrame.getHeight(),
 				CvType.CV_8UC1);
@@ -119,31 +126,98 @@ public class HelloOpenCvActivity extends Activity {
 		Imgproc.cvtColor(imageMat, imageMat, Imgproc.COLOR_RGB2GRAY);
 		return imageMat;
 	}
-	
-	public Mat threshold1(String imagePath) {        //checkout local branch and merge remote branch
-		Mat GrayMat=toGrayMat(imagePath);
+
+	public Mat thresholdMat(Mat GrayMat) { // checkout local branch and merge
+		// remote branch
 		Mat outputMat = GrayMat.clone();
-		//------------------
-		Imgproc.threshold(GrayMat, outputMat, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
-		//------------------
-		saveMatBMP(outputMat, "1test");//sale bien
+		// ------------------
+		Imgproc.threshold(GrayMat, outputMat, 0, 255, Imgproc.THRESH_BINARY_INV
+				| Imgproc.THRESH_OTSU);
+		// ------------------
+		Core.convertScaleAbs(outputMat, outputMat, 50, 0);
 		return outputMat;
 	}
-	
-	Mat cannyMat(Mat image){
-		Core.convertScaleAbs(image, image, 10, 0);
-		Imgproc.Canny(image, image, 66, 90);
-		return image;
-	}
-	
-	Mat dilateMat(Mat cannyMat){
-		float dilation_size = 1.0f;
+
+	public Mat dilateMat(Mat cannyMat, float dilatation_factor) {
+		float dilation_size = dilatation_factor;
 		Point point = new Point(dilation_size, dilation_size);
-//		Imgproc.dilate(cannyMat, cannyMat, kernel, anchor, iterations);dilate(cannyMat, cannyMat, Mat(), point);
-		org.opencv.core.Size s = new Size(2 * dilation_size + 1, 2 * dilation_size + 1);
-		Mat element = Imgproc.getStructuringElement(2, s, point);     // dilation_type = MORPH_ELLIPSE
+		// Imgproc.dilate(cannyMat, cannyMat, kernel, anchor,
+		// iterations);dilate(cannyMat, cannyMat, Mat(), point);
+		org.opencv.core.Size s = new Size(2 * dilation_size + 1,
+				2 * dilation_size + 1);
+		Mat element = Imgproc.getStructuringElement(2, s, point); // dilation_type
+																	// =
+																	// MORPH_ELLIPSE
 		Imgproc.dilate(cannyMat, cannyMat, element);
 		return cannyMat;
+	}
+
+	public Mat threshold1(String imagePath) { // checkout local branch and merge
+												// remote branch
+		Mat GrayMat = toGrayMat(imagePath);
+		Mat outputMat = GrayMat.clone();
+		// ------------------
+		Imgproc.threshold(GrayMat, outputMat, 0, 255, Imgproc.THRESH_BINARY
+				| Imgproc.THRESH_OTSU);
+		// ------------------
+		saveMatBMP(outputMat, "1test");// sale bien
+		return outputMat;
+	}
+
+	public Mat cannyMat(Mat image) {
+		Mat canny_img = new Mat();
+		Core.convertScaleAbs(image, canny_img, 10, 0);
+		Imgproc.Canny(image, canny_img, 66, 90);
+		return canny_img;
+	}
+
+	Mat dilateMat(Mat cannyMat) {
+		float dilation_size = 1.0f;
+		Point point = new Point(dilation_size, dilation_size);
+		// Imgproc.dilate(cannyMat, cannyMat, kernel, anchor,
+		// iterations);dilate(cannyMat, cannyMat, Mat(), point);
+		org.opencv.core.Size s = new Size(2 * dilation_size + 1,
+				2 * dilation_size + 1);
+		Mat element = Imgproc.getStructuringElement(2, s, point); // dilation_type
+																	// =
+																	// MORPH_ELLIPSE
+		Imgproc.dilate(cannyMat, cannyMat, element);
+		return cannyMat;
+	}
+
+	public Mat drawCont2(Mat image, List<MatOfPoint> contours) { // fill de
+																	// contours
+		Mat drawing = Mat.zeros(image.size(), CvType.CV_8UC1);
+		Scalar color = new Scalar(255, 0, 0);
+		Mat hierarchy = new Mat();
+		Point point = new Point(0, 0);
+		for (int i = 0; i < contours.size(); i++) {
+			Imgproc.drawContours(drawing, contours, i, color, -1, 8, hierarchy,
+					0, point);
+		}
+		return drawing;
+	}
+
+	public Mat clipping2(Mat thresholdMat, Mat mask) {
+		Mat clippedMat = new Mat();
+		Core.multiply(mask, thresholdMat, clippedMat);
+
+		return clippedMat;
+	}
+
+	void saveMat(Mat imagetosave, String namepng) {
+		Utils.matToBitmap(imagetosave, inputFrame);
+		File file = new File("/sdcard/TestVideo/" + namepng + ".png");
+		if (file.exists())
+			file.delete();
+		try {
+			FileOutputStream out = new FileOutputStream(file);
+			inputFrame.compress(Bitmap.CompressFormat.PNG, 100, out);
+			out.flush();
+			out.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public List<MatOfPoint> detectar_cuadrilateros1(Mat canniedMat) {
@@ -151,20 +225,24 @@ public class HelloOpenCvActivity extends Activity {
 		Mat mHierarchy = new Mat();
 		Imgproc.findContours(canniedMat, contours, mHierarchy,
 				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
-		MatOfPoint2f approx2f=new MatOfPoint2f();
-		Mat dst = canniedMat.clone();
+		MatOfPoint2f approx2f = new MatOfPoint2f();
+		// Mat dst = canniedMat.clone();
 		List<MatOfPoint2f> contours2f = ListMatofPoint2f(contours);
-		int count=0;
+		int count = 0;
 		List<MatOfPoint> contour_cuadrilateros = new ArrayList<MatOfPoint>();
 		for (int i = 0; i < contours.size(); i++) {
-			Imgproc.approxPolyDP(contours2f.get(i), approx2f,Imgproc.arcLength(contours2f.get(i), true) * 0.07, true);//0.07
+			Imgproc.approxPolyDP(contours2f.get(i), approx2f,
+					Imgproc.arcLength(contours2f.get(i), true) * 0.045, true);// 0.07
 			MatOfPoint approx = new MatOfPoint(approx2f.toArray());
-//			if((Imgproc.contourArea(contours.get(i)))> 5.0 && (Imgproc.contourArea(contours.get(i))) <200 && Imgproc.isContourConvex(approx))
-			if((Imgproc.contourArea(contours.get(i)))> 1000.0 &&Imgproc.isContourConvex(approx)){// 1000<
-				if (approx.toList().size() == 4)
-				{
+			// if((Imgproc.contourArea(contours.get(i)))> 5.0 &&//
+			// (Imgproc.contourArea(contours.get(i))) <200 &&//
+			// Imgproc.isContourConvex(approx))
+			if ((Imgproc.contourArea(contours.get(i))) > 10000.0
+					&& Imgproc.isContourConvex(approx)) {// 1000<
+				if (approx.toList().size() >= 4) {
 					count++;
-					Log.v(TAG, "Cuadrilatero encontrado: " + count + " "+ Imgproc.contourArea(contours.get(i)));
+					Log.v(TAG, "Cuadrilatero encontrado: " + count + " "
+							+ Imgproc.contourArea(contours.get(i)));
 					contour_cuadrilateros.add(approx);
 				}
 			}
@@ -191,21 +269,25 @@ public class HelloOpenCvActivity extends Activity {
 			}
 		}
 	};
+
 	@Override
 	public void onResume() {
 		super.onResume();
 		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, this,
 				mLoaderCallback);
 	}
+
 	@Override
 	public void onPause() {
 		super.onPause();
 	}
+
 	public void onDestroy() {
 		super.onDestroy();
 	}
+
 	// --------------------------------------------------------------------------------
-	
+
 	String Tesseract_function(String image_path) { // probada no tocar
 		TessBaseAPI baseApi = new TessBaseAPI();
 		// DATA_PATH = Path to the storage
@@ -219,26 +301,27 @@ public class HelloOpenCvActivity extends Activity {
 		baseApi.end();
 		// display.setText(Integer.toString(cannybmp.getPixel(100,120)));//show
 		// value of a pixel
-		display.setText(recognizedText);
+		// display.setText(recognizedText);
 		return recognizedText;
 	}
 
-		
-	void showonImageView(Mat output){
+	void showonImageView(Mat output) {
 		Utils.matToBitmap(output, inputFrame);
 		imageView1.setImageBitmap(inputFrame);
 	}
-	Mat drawCont(Mat image, List<MatOfPoint> contours){
+
+	Mat drawCont(Mat image, List<MatOfPoint> contours) {
 		Mat drawing = Mat.zeros(image.size(), CvType.CV_8UC3);
-		Scalar color = new Scalar( 255, 0, 0);
+		Scalar color = new Scalar(255, 0, 0);
 		Mat hierarchy = new Mat();
-		Point point = new Point(0,0);
-		for( int i = 0; i< contours.size(); i++ )
-	     {
-			Imgproc.drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, point );
-	     }
+		Point point = new Point(0, 0);
+		for (int i = 0; i < contours.size(); i++) {
+			Imgproc.drawContours(drawing, contours, i, color, 2, 8, hierarchy,
+					0, point);
+		}
 		return drawing;
 	}
+
 	void saveMatBMP(Mat imagetosave, String namepng) {
 		Utils.matToBitmap(imagetosave, inputFrame);
 		File file = new File("/sdcard/TestVideo/" + namepng + ".png");
@@ -255,15 +338,16 @@ public class HelloOpenCvActivity extends Activity {
 	}
 
 	private List<MatOfPoint2f> ListMatofPoint2f(List<MatOfPoint> toConvert) {
-		List<MatOfPoint2f> matofPoint2f =new ArrayList<MatOfPoint2f>();
+		List<MatOfPoint2f> matofPoint2f = new ArrayList<MatOfPoint2f>();
 		Iterator<MatOfPoint> itr = toConvert.iterator();
 		while (itr.hasNext()) {
-			 MatOfPoint SrcMtx=itr.next();
-			 MatOfPoint2f  NewMtx = new MatOfPoint2f(SrcMtx.toArray());
-			 matofPoint2f.add(NewMtx);
+			MatOfPoint SrcMtx = itr.next();
+			MatOfPoint2f NewMtx = new MatOfPoint2f(SrcMtx.toArray());
+			matofPoint2f.add(NewMtx);
 		}
 		return matofPoint2f;
 	}
+
 	// --no usadas--------------------------------
 	boolean VerifySize(RotatedRect rr) {
 		// Log("rr is w %f, h %f\n", rr.size.width, rr.size.height);
@@ -283,6 +367,7 @@ public class HelloOpenCvActivity extends Activity {
 			return false;
 		return true;
 	}
+
 	int band_clipping(Bitmap cannybmp) {
 		int[][] cannyarray = getBinary(cannybmp); // creates int [][] imgBin
 		int lar = cannyarray.length;
@@ -319,6 +404,7 @@ public class HelloOpenCvActivity extends Activity {
 		// cannybmp.getHeight(), Bitmap.Config.ARGB_8888);
 		return cannybmp.getPixel(100, 100);
 	}
+
 	int band_clipping2(Mat image_canny) {
 		int max_val = 0;
 		Mat vert_proj = new Mat(inputFrame.getWidth(), 1, CvType.CV_8UC1);
@@ -335,6 +421,7 @@ public class HelloOpenCvActivity extends Activity {
 		}
 		return max_val;
 	}
+
 	public static int[] fProjectionH(int img[][]) {
 		int lar = img.length;
 		int alt = img[0].length;
@@ -349,6 +436,7 @@ public class HelloOpenCvActivity extends Activity {
 		}
 		return vproj;
 	}
+
 	private int[][] getBinary(Bitmap bmp) {
 		int w = bmp.getWidth();
 		int h = bmp.getHeight();
